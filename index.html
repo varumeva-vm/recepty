@@ -2,77 +2,187 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Банк рецептов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@500;700&family=Alegreya+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 <style>
-:root{--bg:#faf7f2;--card:#fff;--ink:#2b2622;--mute:#857a70;--line:#e8e0d6;--acc:#c0562b;--chip:#f3ebe2}
-@media (prefers-color-scheme:dark){:root{--bg:#1b1917;--card:#252220;--ink:#eee7df;--mute:#a09488;--line:#3a3430;--acc:#e4825a;--chip:#322c28}}
+:root{
+  --bg:#f3f5f1; --surface:#ffffff; --ink:#1d2a22; --muted:#5f6d63; --line:#d8ded6;
+  --accent:#3f7a4a; --accent-soft:#e2eee2; --chip:#eef1ec;
+  --p:#2f6fa8; --f:#b0782b; --c:#7a5aa8;
+  --display:"Alegreya",Georgia,serif; --body:"Alegreya Sans","Segoe UI",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#141a16; --surface:#1c241f; --ink:#e6ece6; --muted:#9aa89e; --line:#2f3a33;
+  --accent:#7cc289; --accent-soft:#24362a; --chip:#232d26;
+  --p:#7fb2e0; --f:#e0ad66; --c:#b59ae0; color-scheme:dark}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
-header{max-width:900px;margin:0 auto;padding:24px 16px 8px}
-h1{margin:0 0 12px;font-size:26px}
-input{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font-size:16px}
-.tags{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
-.tag{border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:4px 12px;font-size:14px;cursor:pointer}
-.tag.on{background:var(--acc);border-color:var(--acc);color:#fff}
-main{max-width:900px;margin:0 auto;padding:8px 16px 40px;display:grid;gap:12px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer}
-.card h2{margin:0 0 4px;font-size:18px}
-.meta{color:var(--mute);font-size:14px}
-.kbju{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.k{background:var(--chip);border-radius:8px;padding:2px 8px;font-size:13px}
-.body{display:none;margin-top:12px;border-top:1px solid var(--line);padding-top:12px}
-.card.open .body{display:block}
-h3{font-size:15px;margin:12px 0 4px;color:var(--acc)}
-ul,ol{margin:0;padding-left:20px}
-.empty{color:var(--mute);text-align:center;padding:40px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.5;padding:28px 16px 48px}
+.wrap{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1{font-family:var(--display);font-weight:700;font-size:2.3rem;line-height:1.1;margin:0}
+.sub{color:var(--muted);margin:4px 0 0}
+.tools{display:flex;flex-direction:column;gap:12px}
+input[type=search]{width:100%;font:inherit;padding:12px 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.lbl-row{font-size:.85rem;color:var(--muted);margin-bottom:-4px}
+.tags{display:flex;flex-wrap:wrap;gap:8px}
+.tag{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--chip);color:var(--ink);padding:5px 12px;border-radius:999px;cursor:pointer}
+.tag[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.prod{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.prod input{flex:1;min-width:200px}
+.pchip{font:inherit;font-size:.9rem;border:none;background:var(--accent);color:var(--surface);padding:5px 10px;border-radius:999px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.card{all:unset;box-sizing:border-box;cursor:pointer;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.card:hover{border-color:var(--accent)}
+.card h2{font-family:var(--display);font-weight:700;font-size:1.3rem;line-height:1.2;margin:0}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:.9rem}
+.kbju{display:flex;gap:12px;font-family:var(--mono);font-size:.82rem;flex-wrap:wrap}
+.kbju b{font-weight:600}
+.k-p{color:var(--p)} .k-f{color:var(--f)} .k-c{color:var(--c)}
+.minitags{display:flex;flex-wrap:wrap;gap:6px}
+.minitags span{font-size:.78rem;background:var(--accent-soft);color:var(--accent);padding:2px 8px;border-radius:6px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:28px;color:var(--muted);text-align:center}
+.back{all:unset;cursor:pointer;color:var(--accent);font-weight:500}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px;display:flex;flex-direction:column;gap:22px}
+.sheet h2{font-family:var(--display);font-size:1.9rem;line-height:1.15;margin:0}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.fact{border-top:2px solid var(--line);padding-top:6px}
+.fact .lbl{font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.fact .val{font-family:var(--mono);font-size:1.15rem}
+.fact.p{border-color:var(--p)} .fact.f{border-color:var(--f)} .fact.c{border-color:var(--c)} .fact.k{border-color:var(--ink)}
+.cols{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr);gap:28px}
+@media (max-width:720px){.cols{grid-template-columns:1fr}}
+h3{font-family:var(--display);font-size:1.25rem;margin:0 0 10px}
+.portions{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.portions button{font:inherit;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+.portions output{font-family:var(--mono);min-width:2ch;text-align:center}
+.ing{list-style:none;margin:0;padding:0}
+.ing li{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line)}
+.ing li.hit{background:var(--accent-soft)}
+.ing .amt{font-family:var(--mono);font-size:.9rem;white-space:nowrap;color:var(--muted)}
+.ing .note{color:var(--muted);font-size:.88rem}
+.steps{margin:0;padding-left:1.4em;display:flex;flex-direction:column;gap:10px}
+.steps li::marker{font-family:var(--mono);color:var(--accent)}
+.src{color:var(--muted);font-size:.9rem}
+.note-box{background:var(--accent-soft);border-radius:10px;padding:10px 14px;font-size:.95rem}
 </style>
 </head>
 <body>
-<header>
-<h1>Банк рецептов</h1>
-<input id="q" placeholder="Поиск: название или ингредиент">
-<div class="tags" id="tags"></div>
-</header>
-<main id="list"><div class="empty">Загружаю…</div></main>
+<div class="wrap">
+  <header>
+    <h1>Банк рецептов</h1>
+    <p class="sub" id="count">Загружаю рецепты…</p>
+  </header>
+  <section id="listView" class="tools">
+    <input type="search" id="q" placeholder="Поиск по названию" aria-label="Поиск">
+    <div class="lbl-row">Что есть из продуктов — покажу рецепты, где есть всё выбранное:</div>
+    <div class="prod">
+      <input type="search" id="p" list="plist" placeholder="Например: кабачок, курица — Enter">
+      <datalist id="plist"></datalist>
+      <span id="pchips" class="prod"></span>
+    </div>
+    <div class="tags" id="tags" role="group" aria-label="Фильтр по тегам"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+  <section id="detailView" hidden></section>
+</div>
 <script>
 const SHEET="18u-5dcQHyhi7LJoIhxwnIQ1cB7TkORRrRCQmLC1ppk4";
-const URL_CSV=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent("Лист1")}`;
-let all=[],tag=null;
+const CSV=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent("Лист1")}`;
+const $=s=>document.querySelector(s);
+let recipes=[],activeTag=null,current=null,portions=1,prods=[];
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const num=s=>{const n=parseFloat(String(s).replace(",","."));return isNaN(n)?null:n};
+const fmt=n=>n==null?"":String(Math.round(n*10)/10).replace(".",",");
 const lines=s=>String(s||"").split("\n").map(x=>x.trim()).filter(Boolean);
-function kbju(r){
-  const p=r["Ккал/порц"]?["порция",r["Ккал/порц"],r["Б/порц"],r["Ж/порц"],r["У/порц"]]
-        :r["Ккал/100г"]?["100 г",r["Ккал/100г"],r["Б/100г"],r["Ж/100г"],r["У/100г"]]:null;
-  if(!p)return"";
-  return `<div class="kbju"><span class="k">${p[1]} ккал / ${p[0]}</span><span class="k">Б ${p[2]}</span><span class="k">Ж ${p[3]}</span><span class="k">У ${p[4]}</span></div>`;
+const plural=n=>(n%10===1&&n%100!==11)?"порция":(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?"порции":"порций";
+const pluralR=n=>(n%10===1&&n%100!==11)?"рецепт":(n%10>=2&&n%10<=4&&(n%100<10||n%100>=20))?"рецепта":"рецептов";
+const norm=s=>s.toLowerCase().replace(/ё/g,"е");
+const stem=w=>{w=norm(w).trim();return w.length<=4?w.slice(0,3):w.slice(0,w.length-2)};
+const words=s=>norm(s).split(/[^a-zа-я]+/).filter(w=>w.length>2);
+
+function parseIng(line){
+  let name=line,qty="",note="";
+  const m=line.match(/\s\(([^()]*)\)\s*$/); if(m){note=m[1];name=line.slice(0,m.index)}
+  const i=name.indexOf(" — "); if(i>=0){qty=name.slice(i+3).trim();name=name.slice(0,i)}
+  const q=qty.match(/^([\d.,]+)\s*(.*)$/);
+  return q?{name,amount:num(q[1]),unit:q[2],note}:{name,amountText:qty,note};
 }
-function render(){
-  const q=document.getElementById("q").value.toLowerCase().trim();
-  const rows=all.filter(r=>(!tag||r._tags.includes(tag))&&(!q||(r["Название"]+" "+r["Ингредиенты"]+" "+r["Теги"]).toLowerCase().includes(q)));
-  const el=document.getElementById("list");
-  if(!rows.length){el.innerHTML='<div class="empty">Ничего не найдено</div>';return}
-  el.innerHTML=rows.map(r=>{
-    const m=[r["Порций"]&&`${r["Порций"]} порц.`,r["Время, мин"]&&`${r["Время, мин"]} мин`,r["Температура, °C"]&&`${r["Температура, °C"]} °C`].filter(Boolean).join(" · ");
-    const steps=lines(r["Шаги"]).map(s=>s.replace(/^\d+\.\s*/,""));
-    return `<div class="card"><h2>${esc(r["Название"])}</h2><div class="meta">${esc(m)}${m&&r["Теги"]?" · ":""}${esc(r["Теги"])}</div>${kbju(r)}
-    <div class="body"><h3>Ингредиенты</h3><ul>${lines(r["Ингредиенты"]).map(x=>`<li>${esc(x)}</li>`).join("")}</ul>
-    <h3>Приготовление</h3><ol>${steps.map(x=>`<li>${esc(x)}</li>`).join("")}</ol>
-    ${r["Заметки"]?`<h3>Заметки</h3><p>${esc(r["Заметки"])}</p>`:""}
-    ${r["Источник"]?`<p class="meta">Источник: ${esc(r["Источник"])}</p>`:""}</div></div>`}).join("");
-  el.querySelectorAll(".card").forEach(c=>c.onclick=()=>c.classList.toggle("open"));
+function k4(a,b,c,d){const k=num(a);return k==null?null:{kcal:k,p:num(b),f:num(c),c:num(d)}}
+function fromRow(r){
+  const steps=lines(r["Шаги"]).map(s=>s.replace(/^\d+\.\s*/,""));
+  const ingredients=lines(r["Ингредиенты"]).map(parseIng);
+  return{ _id:r["doc_id"], title:r["Название"], servings:num(r["Порций"]), timeMin:num(r["Время, мин"]), tempC:num(r["Температура, °C"]),
+    kbjuPerServing:k4(r["Ккал/порц"],r["Б/порц"],r["Ж/порц"],r["У/порц"]), kbjuPer100:k4(r["Ккал/100г"],r["Б/100г"],r["Ж/100г"],r["У/100г"]),
+    tags:String(r["Теги"]||"").split(",").map(t=>t.trim()).filter(Boolean), ingredients, steps,
+    notes:r["Заметки"], source:r["Источник"], added:r["Добавлен"],
+    _words:ingredients.flatMap(i=>words(i.name)) };
 }
-function tags(){
-  const set=[...new Set(all.flatMap(r=>r._tags))].sort();
-  const el=document.getElementById("tags");
-  el.innerHTML=set.map(t=>`<button class="tag${t===tag?" on":""}">${esc(t)}</button>`).join("");
-  el.querySelectorAll(".tag").forEach(b=>b.onclick=()=>{tag=tag===b.textContent?null:b.textContent;tags();render()});
+const hasProd=(r,p)=>{const s=stem(p);return r._words.some(w=>w.startsWith(s))};
+const ingHit=n=>prods.some(p=>words(n).some(w=>w.startsWith(stem(p))));
+
+function kbjuLine(k){return k?`<div class="kbju"><span><b>${fmt(k.kcal)}</b> ккал</span><span class="k-p">Б ${fmt(k.p)}</span><span class="k-f">Ж ${fmt(k.f)}</span><span class="k-c">У ${fmt(k.c)}</span></div>`:""}
+
+function renderList(){
+  const q=norm($("#q").value.trim());
+  const allTags=[...new Set(recipes.flatMap(r=>r.tags))].sort((a,b)=>a.localeCompare(b,"ru"));
+  $("#tags").innerHTML=allTags.map(t=>`<button class="tag" aria-pressed="${t===activeTag}" data-t="${esc(t)}">${esc(t)}</button>`).join("");
+  $("#pchips").innerHTML=prods.map((p,i)=>`<button class="pchip" data-i="${i}" title="Убрать">${esc(p)} ×</button>`).join("");
+  const list=recipes.filter(r=>{
+    if(activeTag&&!r.tags.includes(activeTag))return false;
+    if(prods.length&&!prods.every(p=>hasProd(r,p)))return false;
+    return !q||norm([r.title,...r.tags,...r.ingredients.map(i=>i.name)].join(" ")).includes(q);
+  });
+  $("#grid").innerHTML=!recipes.length?`<div class="empty">Пока пусто</div>`:!list.length?`<div class="empty">Ничего не нашлось. Уберите фильтр или продукт.</div>`:
+    list.map(r=>`<button class="card" data-id="${esc(r._id)}"><h2>${esc(r.title)}</h2>
+      <div class="meta">${r.servings?`<span>${r.servings} ${plural(r.servings)}</span>`:""}${r.timeMin?`<span>${r.timeMin} мин</span>`:""}${r.tempC?`<span>${r.tempC} °C</span>`:""}</div>
+      ${r.kbjuPerServing?kbjuLine(r.kbjuPerServing):(r.kbjuPer100?`<div class="meta">на 100 г</div>`+kbjuLine(r.kbjuPer100):"")}
+      <div class="minitags">${r.tags.map(t=>`<span>${esc(t)}</span>`).join("")}</div></button>`).join("");
+  $("#count").textContent=recipes.length?`${recipes.length} ${pluralR(recipes.length)}`+(list.length!==recipes.length?` · показано ${list.length}`:""):"Пока пусто";
 }
-Papa.parse(URL_CSV,{download:true,header:true,skipEmptyLines:true,
-  complete:res=>{all=res.data.filter(r=>r["Название"]).map(r=>({...r,_tags:lines((r["Теги"]||"").replace(/,/g,"\n"))})).reverse();tags();render()},
-  error:()=>{document.getElementById("list").innerHTML='<div class="empty">Не удалось загрузить таблицу</div>'}});
-document.getElementById("q").oninput=render;
+function openRecipe(id){current=recipes.find(r=>r._id===id);if(!current)return;portions=current.servings||1;renderDetail();$("#listView").hidden=true;$("#detailView").hidden=false;scrollTo(0,0)}
+function closeRecipe(){current=null;$("#detailView").hidden=true;$("#listView").hidden=false}
+function renderDetail(){
+  const r=current,base=r.servings||1,k=portions/base,kb=r.kbjuPerServing,p100=r.kbjuPer100;
+  const ing=r.ingredients.map(i=>{
+    const amt=i.amount!=null?`${fmt(i.amount*k)} ${esc(i.unit||"")}`:esc(i.amountText||"");
+    return `<li class="${ingHit(i.name)?"hit":""}"><span>${esc(i.name)}${i.note?` <span class="note">· ${esc(i.note)}</span>`:""}</span><span class="amt">${amt}</span></li>`}).join("");
+  $("#detailView").innerHTML=`<button class="back" id="back">← Все рецепты</button>
+  <article class="sheet">
+    <div><h2>${esc(r.title)}</h2>
+      <div class="meta" style="margin-top:6px">${r.timeMin?`<span>${r.timeMin} мин</span>`:""}${r.tempC?`<span>${r.tempC} °C</span>`:""}<span>${r.servings?`Исходно на ${base} ${plural(base)}`:"На всю партию"}</span></div></div>
+    ${kb?`<div class="facts"><div class="fact k"><div class="lbl">Ккал / порция</div><div class="val">${fmt(kb.kcal)}</div></div>
+      <div class="fact p"><div class="lbl">Белки, г</div><div class="val">${fmt(kb.p)}</div></div>
+      <div class="fact f"><div class="lbl">Жиры, г</div><div class="val">${fmt(kb.f)}</div></div>
+      <div class="fact c"><div class="lbl">Углеводы, г</div><div class="val">${fmt(kb.c)}</div></div></div>`:""}
+    ${p100?`<div class="src">На 100 г: ${fmt(p100.kcal)} ккал · Б ${fmt(p100.p)} · Ж ${fmt(p100.f)} · У ${fmt(p100.c)}</div>`:""}
+    <div class="cols"><div><h3>Ингредиенты</h3>
+      <div class="portions"><span>${r.servings?"Порций:":"Партий:"}</span><button id="minus" aria-label="Меньше">−</button><output>${portions}</output><button id="plus" aria-label="Больше">+</button></div>
+      <ul class="ing">${ing}</ul></div>
+      <div><h3>Как готовить</h3><ol class="steps">${r.steps.map(s=>`<li>${esc(s)}</li>`).join("")}</ol></div></div>
+    ${r.notes?`<div class="note-box">${esc(r.notes)}</div>`:""}
+    ${r.source?`<div class="src">Источник: ${esc(r.source)}</div>`:""}
+  </article>`;
+  $("#back").onclick=closeRecipe;
+  $("#minus").onclick=()=>{if(portions>1){portions--;renderDetail()}};
+  $("#plus").onclick=()=>{portions++;renderDetail()};
+}
+function addProd(v){v.split(",").map(s=>s.trim()).filter(Boolean).forEach(s=>{if(!prods.includes(s))prods.push(s)});$("#p").value="";renderList()}
+$("#q").addEventListener("input",renderList);
+$("#p").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addProd($("#p").value)}});
+$("#p").addEventListener("change",()=>{const v=$("#p").value;if([...$("#plist").options].some(o=>o.value===v))addProd(v)});
+$("#pchips").addEventListener("click",e=>{const b=e.target.closest(".pchip");if(!b)return;prods.splice(+b.dataset.i,1);renderList()});
+$("#tags").addEventListener("click",e=>{const b=e.target.closest(".tag");if(!b)return;activeTag=activeTag===b.dataset.t?null:b.dataset.t;renderList()});
+$("#grid").addEventListener("click",e=>{const c=e.target.closest(".card");if(c)openRecipe(c.dataset.id)});
+Papa.parse(CSV,{download:true,header:true,skipEmptyLines:true,
+  complete:res=>{
+    recipes=res.data.filter(r=>r["Название"]).map(fromRow).sort((a,b)=>String(b.added).localeCompare(String(a.added)));
+    const names=[...new Set(recipes.flatMap(r=>r.ingredients.map(i=>norm(i.name.split(/[,(]/)[0].trim()))))].sort((a,b)=>a.localeCompare(b,"ru"));
+    $("#plist").innerHTML=names.map(n=>`<option value="${esc(n)}">`).join("");
+    renderList()},
+  error:()=>{$("#count").textContent="Не удалось загрузить таблицу. Проверьте, что она открыта по ссылке."}});
 </script>
 </body>
 </html>
