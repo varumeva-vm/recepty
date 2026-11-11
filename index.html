@@ -28,6 +28,9 @@ input[type=search]{width:100%;font:inherit;padding:12px 14px;border:1px solid va
 input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .lbl-row{font-size:.85rem;color:var(--muted);margin-bottom:-4px}
 .tags{display:flex;flex-wrap:wrap;gap:8px}
+.tabs{display:flex;gap:6px;border-bottom:1px solid var(--line)}
+.tab{font:inherit;font-weight:500;border:none;background:none;color:var(--muted);padding:8px 14px;border-bottom:3px solid transparent;margin-bottom:-1px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
 .tag{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--chip);color:var(--ink);padding:5px 12px;border-radius:999px;cursor:pointer}
 .tag[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
 .prod{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -76,6 +79,7 @@ h3{font-family:var(--display);font-size:1.25rem;margin:0 0 10px}
     <p class="sub" id="count">Загружаю рецепты…</p>
   </header>
   <section id="listView" class="tools">
+    <div class="tabs" role="tablist" id="tabs"><button class="tab" role="tab" data-g="new" aria-selected="true">Новые</button><button class="tab" role="tab" data-g="Old" aria-selected="false">Old</button></div>
     <input type="search" id="q" placeholder="Поиск по названию" aria-label="Поиск">
     <div class="lbl-row">Что есть из продуктов — покажу рецепты, где есть всё выбранное:</div>
     <div class="prod">
@@ -92,7 +96,8 @@ h3{font-family:var(--display);font-size:1.25rem;margin:0 0 10px}
 const SHEET="18u-5dcQHyhi7LJoIhxwnIQ1cB7TkORRrRCQmLC1ppk4";
 const CSV=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent("Лист1")}`;
 const $=s=>document.querySelector(s);
-let recipes=[],activeTag=null,current=null,portions=1,prods=[];
+let recipes=[],activeTag=null,current=null,portions=1,prods=[],group="new";
+const grp=r=>r.group==="Old"?"Old":"new";
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const num=s=>{const n=parseFloat(String(s).replace(",","."));return isNaN(n)?null:n};
 const fmt=n=>n==null?"":String(Math.round(n*10)/10).replace(".",",");
@@ -117,7 +122,7 @@ function fromRow(r){
   return{ _id:r["doc_id"], title:r["Название"], servings:num(r["Порций"]), timeMin:num(r["Время, мин"]), tempC:num(r["Температура, °C"]),
     kbjuPerServing:k4(r["Ккал/порц"],r["Б/порц"],r["Ж/порц"],r["У/порц"]), kbjuPer100:k4(r["Ккал/100г"],r["Б/100г"],r["Ж/100г"],r["У/100г"]),
     tags:String(r["Теги"]||"").split(",").map(t=>t.trim()).filter(Boolean), ingredients, steps,
-    notes:r["Заметки"], source:r["Источник"], added:r["Добавлен"],
+    notes:r["Заметки"], source:r["Источник"], added:r["Добавлен"], group:String(r["Группа"]||"").trim(),
     _words:ingredients.flatMap(i=>words(i.name)) };
 }
 const hasProd=(r,p)=>{const s=stem(p);return r._words.some(w=>w.startsWith(s))};
@@ -127,20 +132,23 @@ function kbjuLine(k){return k?`<div class="kbju"><span><b>${fmt(k.kcal)}</b> к�
 
 function renderList(){
   const q=norm($("#q").value.trim());
-  const allTags=[...new Set(recipes.flatMap(r=>r.tags))].sort((a,b)=>a.localeCompare(b,"ru"));
+  const pool=recipes.filter(r=>grp(r)===group);
+  document.querySelectorAll(".tab").forEach(t=>{const n=recipes.filter(r=>grp(r)===t.dataset.g).length;t.setAttribute("aria-selected",t.dataset.g===group);t.textContent=(t.dataset.g==="Old"?"Old":"Новые")+` · ${n}`});
+  const allTags=[...new Set(pool.flatMap(r=>r.tags))].sort((a,b)=>a.localeCompare(b,"ru"));
   $("#tags").innerHTML=allTags.map(t=>`<button class="tag" aria-pressed="${t===activeTag}" data-t="${esc(t)}">${esc(t)}</button>`).join("");
   $("#pchips").innerHTML=prods.map((p,i)=>`<button class="pchip" data-i="${i}" title="Убрать">${esc(p)} ×</button>`).join("");
-  const list=recipes.filter(r=>{
+  if(activeTag&&!allTags.includes(activeTag))activeTag=null;
+  const list=pool.filter(r=>{
     if(activeTag&&!r.tags.includes(activeTag))return false;
     if(prods.length&&!prods.every(p=>hasProd(r,p)))return false;
     return !q||norm([r.title,...r.tags,...r.ingredients.map(i=>i.name)].join(" ")).includes(q);
   });
-  $("#grid").innerHTML=!recipes.length?`<div class="empty">Пока пусто</div>`:!list.length?`<div class="empty">Ничего не нашлось. Уберите фильтр или продукт.</div>`:
+  $("#grid").innerHTML=!pool.length?`<div class="empty">Пока пусто</div>`:!list.length?`<div class="empty">Ничего не нашлось. Уберите фильтр или продукт.</div>`:
     list.map(r=>`<button class="card" data-id="${esc(r._id)}"><h2>${esc(r.title)}</h2>
       <div class="meta">${r.servings?`<span>${r.servings} ${plural(r.servings)}</span>`:""}${r.timeMin?`<span>${r.timeMin} мин</span>`:""}${r.tempC?`<span>${r.tempC} °C</span>`:""}</div>
       ${r.kbjuPerServing?kbjuLine(r.kbjuPerServing):(r.kbjuPer100?`<div class="meta">на 100 г</div>`+kbjuLine(r.kbjuPer100):"")}
       <div class="minitags">${r.tags.map(t=>`<span>${esc(t)}</span>`).join("")}</div></button>`).join("");
-  $("#count").textContent=recipes.length?`${recipes.length} ${pluralR(recipes.length)}`+(list.length!==recipes.length?` · показано ${list.length}`:""):"Пока пусто";
+  $("#count").textContent=recipes.length?`${recipes.length} ${pluralR(recipes.length)}`+(list.length!==pool.length?` · показано ${list.length}`:""):"Пока пусто";
 }
 function openRecipe(id){current=recipes.find(r=>r._id===id);if(!current)return;portions=current.servings||1;renderDetail();$("#listView").hidden=true;$("#detailView").hidden=false;scrollTo(0,0)}
 function closeRecipe(){current=null;$("#detailView").hidden=true;$("#listView").hidden=false}
@@ -171,6 +179,7 @@ function renderDetail(){
 }
 function addProd(v){v.split(",").map(s=>s.trim()).filter(Boolean).forEach(s=>{if(!prods.includes(s))prods.push(s)});$("#p").value="";renderList()}
 $("#q").addEventListener("input",renderList);
+$("#tabs").addEventListener("click",e=>{const t=e.target.closest(".tab");if(!t)return;group=t.dataset.g;closeRecipe();renderList()});
 $("#p").addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addProd($("#p").value)}});
 $("#p").addEventListener("change",()=>{const v=$("#p").value;if([...$("#plist").options].some(o=>o.value===v))addProd(v)});
 $("#pchips").addEventListener("click",e=>{const b=e.target.closest(".pchip");if(!b)return;prods.splice(+b.dataset.i,1);renderList()});
