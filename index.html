@@ -102,7 +102,7 @@ const SHEET="18u-5dcQHyhi7LJoIhxwnIQ1cB7TkORRrRCQmLC1ppk4";
 const CSV=`https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent("Лист1")}`;
 const $=s=>document.querySelector(s);
 let recipes=[],activeTag=null,current=null,portions=1,prods=[],group="new";
-const GROUPS=[["new","Новые"],["Гордон Рамзи","Гордон Рамзи"],["Попробовать","Попробовать"],["Old","Old"],["Советы","Советы"]];
+const GROUPS=[["new","Новые"],["Гордон Рамзи","Гордон Рамзи"],["Попробовать","Попробовать"],["Кофейные напитки","Кофейные напитки"],["Old","Old"],["Советы","Советы"]];
 const grp=r=>GROUPS.some(g=>g[0]===r.group)?r.group:"new";
 const isTips=r=>r.group==="Советы";
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
